@@ -15,6 +15,7 @@ use {
         //libc_sys,
     },
     crate::{
+        makepad_error_log::*,
         cx_api::{CxOsOp, CxOsApi},
         makepad_math::*,
         thread::Signal,
@@ -33,6 +34,7 @@ use {
             WebSocketAutoReconnect,
             Event,
             WindowGeom,
+            HttpResponseEvent,
         },
         window::CxWindowPool,
         pass::CxPassParent,
@@ -351,6 +353,17 @@ impl Cx {
         self.after_every_event(&to_java);
     }
 
+    pub fn from_java_on_http_response(&mut self, content: Vec<u8>, to_java: AndroidToJava) {
+        log!("HTTP RESPONSE: {:?}", content);
+        let e = Event::HttpResponse(
+            HttpResponseEvent {
+                body: content,
+            }
+        );
+        self.call_event_handler(&e);
+        self.after_every_event(&to_java);
+    }
+
     pub fn draw_pass_to_fullscreen(
         &mut self,
         pass_id: PassId,
@@ -490,6 +503,10 @@ impl Cx {
                 },
                 CxOsOp::ShowClipboardActions(selected) => {
                     to_java.show_clipboard_actions(selected.as_str());
+                },
+                CxOsOp::HttpRequest(request) => {
+                    log!("HTTP REQUEST: {:?}", request);
+                    to_java.http_request(request)
                 },
                 _ => ()
             }

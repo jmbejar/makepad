@@ -17,6 +17,7 @@ public class Makepad {
         void showClipboardActions(String selected);
         void copyToClipboard(String selected);
         void pasteFromClipboard();
+        void requestHttp(HttpRequest request);
     }
 
     static {
@@ -41,4 +42,5 @@ public class Makepad {
     static native void onCopyToClipboard(long cx, Callback callback);
     static native void onPasteFromClipboard(long cx, String content, Callback callback);
     static native void onCutToClipboard(long cx, Callback callback);
+    static native void onHttpResponse(long cx, HttpResponse response, Callback callback);
 }
