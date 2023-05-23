@@ -244,6 +244,7 @@ pub use {
         gpu_info::{
             GpuPerformance
         },
+        network::*,
         
     },
 };

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::makepad_micro_serde::{DeBin, SerBin};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub struct HttpRequest {
     pub url: String,
     pub method: String,

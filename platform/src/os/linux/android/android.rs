@@ -357,7 +357,12 @@ impl Cx {
         log!("HTTP RESPONSE: {:?}", content);
         let e = Event::HttpResponse(
             HttpResponseEvent {
-                body: content,
+                //body: content,
+                response: crate::network::HttpResponse {
+                    body: Some(content),
+                    status_code: 200,
+                    headers: std::collections::HashMap::new(),
+                },
             }
         );
         self.call_event_handler(&e);
