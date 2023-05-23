@@ -445,6 +445,17 @@ export class WasmWebBrowser extends WasmBridge {
             context_ptr
         }
     }
+
+    FromWasmHTTPRequest(args) {
+        function reqListener() {
+            console.log(this.responseText);
+          }
+
+        const req = new XMLHttpRequest();
+        req.addEventListener("load", reqListener);
+        req.open(args.method, args.url);
+        req.send(); 
+    }
     
     // thanks to JP Posma with Zaplib for figuring out how to do the stack_pointer export without wasm bindgen
     // https://github.com/Zaplib/zaplib/blob/650305c856ea64d9c2324cbd4b8751ffbb971ac3/zaplib/cargo-zaplib/src/build.rs#L48

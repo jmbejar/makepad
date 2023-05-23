@@ -382,7 +382,13 @@ impl Cx {
                 CxOsOp::StartDragging(_dragged_item) => {
                 }
                 CxOsOp::UpdateMenu(_menu) => {
-                }
+                },
+                CxOsOp::HttpRequest(_) => {
+                    self.os.from_wasm(FromWasmHTTPRequest {
+                        url: "https://api.openai.com/v1/chat/completions".to_string(),
+                        method: "GET".to_string(),
+                    });
+                },
             }
         }
     }
@@ -440,6 +446,7 @@ impl CxOsApi for Cx {
             FromWasmShowTextIME::to_js_code(),
             FromWasmHideTextIME::to_js_code(),
             FromWasmCreateThread::to_js_code(),
+            FromWasmHTTPRequest::to_js_code(),
             FromWasmWebSocketOpen::to_js_code(),
             FromWasmWebSocketSend::to_js_code(),
             FromWasmXrStartPresenting::to_js_code(),

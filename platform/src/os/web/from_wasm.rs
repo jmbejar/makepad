@@ -141,6 +141,12 @@ pub struct FromWasmCreateThread {
     pub context_ptr: u32,
 }
 
+#[derive(FromWasm)]
+pub struct FromWasmHTTPRequest {
+    pub url: String,
+    pub method: String,
+}
+
 
 
 // WebGL API
