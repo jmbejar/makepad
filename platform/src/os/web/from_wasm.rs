@@ -143,6 +143,7 @@ pub struct FromWasmCreateThread {
 
 #[derive(FromWasm)]
 pub struct FromWasmHTTPRequest {
+    pub id: String,
     pub url: String,
     pub method: String,
 }

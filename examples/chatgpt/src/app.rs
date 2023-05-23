@@ -84,7 +84,7 @@ impl App{
         }
 
         // WIP
-        let completion_url = format!("{}/chat/completions/chat/completions", OPENAI_BASE_URL);
+        let completion_url = format!("{}/chat/completions", OPENAI_BASE_URL);
         let mut request = HttpRequest::new(completion_url, "GET".to_string());
         request.set_header("Content-Type".to_string(), "application/json".to_string());
         request.set_body(ChatPrompt {

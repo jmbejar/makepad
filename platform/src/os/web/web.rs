@@ -16,6 +16,7 @@ use {
         },
         event::{
             ToWasmMsgEvent,
+            HttpResponseEvent,
             WebSocket,
             WebSocketErrorEvent,
             WebSocketMessageEvent,
@@ -217,6 +218,19 @@ impl Cx {
                     let main_pass_id = self.windows[CxWindowPool::id_zero()].main_pass_id.unwrap();
                     self.passes[main_pass_id].paint_dirty = true;
                 }
+
+                live_id!(ToWasmHTTPResponse) => {
+                    let tw = ToWasmHTTPResponse::read_to_wasm(&mut to_wasm);
+                    let response = HttpResponseEvent {
+                        response: crate::network::HttpResponse {
+                            id: LiveId::from_str(&tw.id).unwrap(),
+                            body: Some(tw.body.into_vec_u8()),
+                            status_code: tw.status as u16,
+                            headers: std::collections::HashMap::new(),
+                        }
+                    };
+                    self.call_event_handler(&Event::HttpResponse(response));
+                }
                 
                 live_id!(ToWasmWebSocketClose) => {
                     let tw = ToWasmWebSocketClose::read_to_wasm(&mut to_wasm);
@@ -383,10 +397,11 @@ impl Cx {
                 }
                 CxOsOp::UpdateMenu(_menu) => {
                 },
-                CxOsOp::HttpRequest(_) => {
+                CxOsOp::HttpRequest(request) => {
                     self.os.from_wasm(FromWasmHTTPRequest {
-                        url: "https://api.openai.com/v1/chat/completions".to_string(),
-                        method: "GET".to_string(),
+                        id: format!("{}", request.id),
+                        url: request.url,
+                        method: request.method,
                     });
                 },
             }
@@ -423,6 +438,7 @@ impl CxOsApi for Cx {
             ToWasmXRUpdate::to_js_code(),
             ToWasmAppGotFocus::to_js_code(),
             ToWasmAppLostFocus::to_js_code(),
+            ToWasmHTTPResponse::to_js_code(),
             ToWasmWebSocketOpen::to_js_code(),
             ToWasmWebSocketClose::to_js_code(),
             ToWasmWebSocketError::to_js_code(),

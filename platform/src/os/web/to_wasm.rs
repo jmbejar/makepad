@@ -601,6 +601,16 @@ pub struct ToWasmAppGotFocus {}
 pub struct ToWasmAppLostFocus {}
 
 #[derive(ToWasm)]
+pub struct ToWasmHTTPResponse {
+    pub id: String,
+    pub status: u32,
+    // TODO Check if we want to support complex types like
+    // hashmap or resort in the string representation
+    //pub headers: HashMap<String, Vec<String>>,
+    pub body: WasmDataU8
+}
+
+#[derive(ToWasm)]
 pub struct ToWasmWebSocketClose {
     pub web_socket_id: usize
 }

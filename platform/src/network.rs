@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 
 use crate::makepad_micro_serde::{DeBin, SerBin};
+use crate::makepad_live_id::*;
 
 #[derive(PartialEq, Debug)]
 pub struct HttpRequest {
+    pub id: LiveId,
     pub url: String,
     pub method: String,
     pub headers: HashMap<String, Vec<String>>,
@@ -14,6 +16,7 @@ impl HttpRequest {
     // TODO: a good default
     pub fn new(url: String, method: String) -> Self {
         HttpRequest {
+            id: LiveId::unique(),
             url,
             method,
             headers: HashMap::new(),
@@ -38,6 +41,7 @@ impl HttpRequest {
 
 #[derive(Debug, Clone)]
 pub struct HttpResponse {
+    pub id: LiveId,
     pub status_code: u16,
     pub headers: HashMap<String, Vec<String>>,
     pub body: Option<Vec<u8>>,

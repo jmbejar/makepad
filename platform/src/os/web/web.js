@@ -447,12 +447,20 @@ export class WasmWebBrowser extends WasmBridge {
     }
 
     FromWasmHTTPRequest(args) {
-        function reqListener() {
-            console.log(this.responseText);
-          }
-
         const req = new XMLHttpRequest();
-        req.addEventListener("load", reqListener);
+        req.addEventListener("load", event => {
+            console.log(this.responseText);
+            // TODO support other response data types
+            const encoder = new TextEncoder();
+            let body = encoder.encode(event.target.responseText);
+
+            this.to_wasm.ToWasmHTTPResponse({
+                id: args.id,
+                status: event.target.status,
+                body: body,
+            });
+            this.do_wasm_pump();
+        });
         req.open(args.method, args.url);
         req.send(); 
     }
