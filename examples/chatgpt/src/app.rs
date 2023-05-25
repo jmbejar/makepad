@@ -1,6 +1,6 @@
-use crate::{makepad_error_log::*};
 use makepad_micro_serde::*;
 use makepad_widgets::*;
+use makepad_platform::makepad_error_log::*;
 
 const OPENAI_BASE_URL: &str = "https://api.openai.com/v1";
 
@@ -84,15 +84,15 @@ impl App{
         }
 
         // WIP
-        let completion_url = format!("{}/chat/completions", OPENAI_BASE_URL);
+        //let completion_url = format!("{}/chat/completions", OPENAI_BASE_URL);
+        let completion_url = "http://localhost:4000/api/todos/".to_string();
+        //let mut request = HttpRequest::new(completion_url, "GET".to_string());
+        //let mut request = HttpRequest::new(completion_url, "POST".to_string());
         let mut request = HttpRequest::new(completion_url, "GET".to_string());
-        request.set_header("Content-Type".to_string(), "application/json".to_string());
-        request.set_body(ChatPrompt {
-            //message: message.to_string(),
-            message: "TEST".to_string(),
-        });
 
-        log!("request: {:?}", request);
+        request.set_header("Content-Type".to_string(), "application/json".to_string());
+        //request.set_body("{\"todo\": {\"text\":\"New Todo Item\"}}".to_string());
+
         cx.http_request(request);
     }
 
@@ -110,19 +110,18 @@ impl AppMain for App{
         }
 
         if let Event::HttpResponse(event) = event {       
-            let chat_response = event.response.get_body::<ChatResponse>().unwrap();
+            let chat_response = event.response.get_body().unwrap();
+            log!("{}", chat_response);
 
             let label = self.ui.get_label(id!(message_label));
-            label.set_label(&chat_response.message); // iterate over choices and choose a message; 
+            label.set_label(&chat_response);
             label.redraw(cx);
         }
         
         let actions = self.ui.handle_widget_event(cx, event);
         
         if self.ui.get_button(id!(send_button)).clicked(&actions) {
-           // cx.spawner().spawn(async { // this doesn't have to be async you could just call send_message
-                Self::send_message(cx, self.ui.clone())
-           // }).unwrap();
+            Self::send_message(cx, self.ui.clone())
         }
     }
 }

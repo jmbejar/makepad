@@ -29,14 +29,18 @@ impl HttpRequest {
         entry.push(value);
     }
 
+    pub fn set_body(&mut self, body: String) {
+        self.body = Some(body.into_bytes());
+    }
+
     // WIP - takes whatever the user sends like a struct and we serialize to a byte array.
     // if it's possible I'd always send the body as a byte array to java to avoid 
     // sending a generic body and doing parsing/serializing on that side.
     // if we can't rely to always send byte array in the body,
-    // we could use the header's content-type and use that to know what to serialize into.
-    pub fn set_body<T: DeBin + SerBin>(&mut self, body: T) {
-       self.body = Some(body.serialize_bin()); 
-    }
+    // // we could use the header's content-type and use that to know what to serialize into.
+    // pub fn set_body<T: DeBin + SerBin + std::fmt::Debug>(&mut self, body: T) {
+    //     self.body = Some(body.serialize_bin()); 
+    // }
 }
 
 #[derive(Debug, Clone)]
@@ -48,12 +52,24 @@ pub struct HttpResponse {
 }
 
 impl HttpResponse {
-    pub fn get_body<T: DeBin + SerBin>(&self) -> Option<T> { 
+    pub fn get_body(&self) -> Option<String> { 
         if let Some(body) = self.body.as_ref() {
-            let deserialized: T = DeBin::deserialize_bin(&body).unwrap(); //TODO: return result
+            let deserialized = String::from_utf8(body.to_vec()).unwrap();
             Some(deserialized)
         } else {
             None
         }
     }
+
+    // I'm almost sure this is not going to work, since the serialization format
+    // is very specific to Makepad.
+    // pub fn get_body<T: DeBin + SerBin>(&self) -> Option<T> { 
+    //     if let Some(body) = self.body.as_ref() {
+    //         crate::log!("body: {:?}", body);
+    //         let deserialized: T = DeBin::deserialize_bin(&body).unwrap(); //TODO: return result
+    //         Some(deserialized)
+    //     } else {
+    //         None
+    //     }
+    // }
 }

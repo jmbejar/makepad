@@ -449,7 +449,6 @@ export class WasmWebBrowser extends WasmBridge {
     FromWasmHTTPRequest(args) {
         const req = new XMLHttpRequest();
         req.addEventListener("load", event => {
-            console.log(this.responseText);
             // TODO support other response data types
             const encoder = new TextEncoder();
             let body = encoder.encode(event.target.responseText);
@@ -462,7 +461,14 @@ export class WasmWebBrowser extends WasmBridge {
             this.do_wasm_pump();
         });
         req.open(args.method, args.url);
-        req.send(); 
+
+        // TODO decode in appropiate format
+        const decoder = new TextDecoder('UTF-8', { fatal: true, ignoreBOM: true });
+        let body = decoder.decode(this.clone_data_u8(args.body));
+        req.setRequestHeader("Content-Type", "application/json");
+        req.send(body);
+
+        this.free_data_u8(args.body);
     }
     
     // thanks to JP Posma with Zaplib for figuring out how to do the stack_pointer export without wasm bindgen

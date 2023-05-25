@@ -402,6 +402,7 @@ impl Cx {
                         id: format!("{}", request.id),
                         url: request.url,
                         method: request.method,
+                        body: WasmDataU8::from_vec_u8(request.body.unwrap_or(Vec::new())),
                     });
                 },
             }
