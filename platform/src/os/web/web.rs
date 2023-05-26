@@ -33,6 +33,7 @@ use {
             WindowGeom,
             WindowGeomChangeEvent
         },
+        network::HttpResponse,
         pass::CxPassParent,
         cx_api::{CxOsApi, CxOsOp},
         cx::{Cx},
@@ -221,15 +222,15 @@ impl Cx {
 
                 live_id!(ToWasmHTTPResponse) => {
                     let tw = ToWasmHTTPResponse::read_to_wasm(&mut to_wasm);
-                    let response = HttpResponseEvent {
-                        response: crate::network::HttpResponse {
-                            id: LiveId::from_str(&tw.id).unwrap(),
-                            body: Some(tw.body.into_vec_u8()),
-                            status_code: tw.status as u16,
-                            headers: std::collections::HashMap::new(),
-                        }
-                    };
-                    self.call_event_handler(&Event::HttpResponse(response));
+                    let mut response = HttpResponse::new(
+                        LiveId::from_str(&tw.id).unwrap(),
+                        tw.status as u16,
+                        Some(tw.body.into_vec_u8())
+                    );
+                    response.parse_and_set_headers(tw.headers);
+                    self.call_event_handler(&Event::HttpResponse(HttpResponseEvent {
+                        response
+                    }));
                 }
                 
                 live_id!(ToWasmWebSocketClose) => {
@@ -398,10 +399,12 @@ impl Cx {
                 CxOsOp::UpdateMenu(_menu) => {
                 },
                 CxOsOp::HttpRequest(request) => {
+                    let headers = request.get_headers_string();
                     self.os.from_wasm(FromWasmHTTPRequest {
                         id: format!("{}", request.id),
                         url: request.url,
                         method: request.method,
+                        headers: headers,
                         body: WasmDataU8::from_vec_u8(request.body.unwrap_or(Vec::new())),
                     });
                 },

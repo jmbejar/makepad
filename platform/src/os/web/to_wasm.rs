@@ -604,9 +604,7 @@ pub struct ToWasmAppLostFocus {}
 pub struct ToWasmHTTPResponse {
     pub id: String,
     pub status: u32,
-    // TODO Check if we want to support complex types like
-    // hashmap or resort in the string representation
-    //pub headers: HashMap<String, Vec<String>>,
+    pub headers: String,
     pub body: WasmDataU8
 }
 

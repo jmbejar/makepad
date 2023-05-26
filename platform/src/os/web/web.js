@@ -445,31 +445,6 @@ export class WasmWebBrowser extends WasmBridge {
             context_ptr
         }
     }
-
-    FromWasmHTTPRequest(args) {
-        const req = new XMLHttpRequest();
-        req.addEventListener("load", event => {
-            // TODO support other response data types
-            const encoder = new TextEncoder();
-            let body = encoder.encode(event.target.responseText);
-
-            this.to_wasm.ToWasmHTTPResponse({
-                id: args.id,
-                status: event.target.status,
-                body: body,
-            });
-            this.do_wasm_pump();
-        });
-        req.open(args.method, args.url);
-
-        // TODO decode in appropiate format
-        const decoder = new TextDecoder('UTF-8', { fatal: true, ignoreBOM: true });
-        let body = decoder.decode(this.clone_data_u8(args.body));
-        req.setRequestHeader("Content-Type", "application/json");
-        req.send(body);
-
-        this.free_data_u8(args.body);
-    }
     
     // thanks to JP Posma with Zaplib for figuring out how to do the stack_pointer export without wasm bindgen
     // https://github.com/Zaplib/zaplib/blob/650305c856ea64d9c2324cbd4b8751ffbb971ac3/zaplib/cargo-zaplib/src/build.rs#L48
@@ -504,6 +479,46 @@ export class WasmWebBrowser extends WasmBridge {
                 this.do_wasm_pump();
             }
         }, 0.016 * 1000.0);
+    }
+
+    parse_and_set_headers(request, headers_string) {
+        let lines = headers_string.split("\r\n");
+        for (let line of lines) {
+            let parts = line.split(": ");
+            if (parts.length == 2) {
+                request.setRequestHeader(parts[0], parts[1]);
+            }
+        }
+    }
+
+    FromWasmHTTPRequest(args) {
+        const req = new XMLHttpRequest();
+        req.open(args.method, args.url);
+        this.parse_and_set_headers(req, args.headers);
+
+        // TODO decode in appropiate format
+        const decoder = new TextDecoder('UTF-8', { fatal: true });
+        let body = decoder.decode(this.clone_data_u8(args.body));
+
+        req.addEventListener("load", event => {
+            // TODO support other response data types
+            const encoder = new TextEncoder();
+            let response = event.target;
+            let body = encoder.encode(response.responseText);
+
+            console.log(response.getAllResponseHeaders());
+
+            this.to_wasm.ToWasmHTTPResponse({
+                id: args.id,
+                status: response.status,
+                body: body,
+                headers: response.getAllResponseHeaders()
+            });
+            this.do_wasm_pump();
+        });
+
+        req.send(body);
+        this.free_data_u8(args.body);
     }
     
     // calling into wasm

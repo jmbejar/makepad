@@ -33,6 +33,14 @@ impl HttpRequest {
         self.body = Some(body.into_bytes());
     }
 
+    pub fn get_headers_string(&self) -> String {
+        let mut headers_string = String::new();
+        for (key, value) in self.headers.iter() {
+            headers_string.push_str(&format!("{}: {}\n", key, value.join(",")));
+        }
+        headers_string
+    }
+
     // WIP - takes whatever the user sends like a struct and we serialize to a byte array.
     // if it's possible I'd always send the body as a byte array to java to avoid 
     // sending a generic body and doing parsing/serializing on that side.
@@ -52,6 +60,16 @@ pub struct HttpResponse {
 }
 
 impl HttpResponse {
+    pub fn new(id: LiveId, status_code: u16, body: Option<Vec<u8>>) -> Self {
+        HttpResponse {
+            id,
+            status_code,
+            headers: HashMap::new(),
+            body: body
+        }
+    }
+    
+    // For now it's only String, let's see how it develops
     pub fn get_body(&self) -> Option<String> { 
         if let Some(body) = self.body.as_ref() {
             let deserialized = String::from_utf8(body.to_vec()).unwrap();
@@ -59,6 +77,29 @@ impl HttpResponse {
         } else {
             None
         }
+    }
+
+    // TODO avoid duplication of this function
+    pub fn get_headers_string(&self) -> String {
+        let mut headers_string = String::new();
+        for (key, value) in self.headers.iter() {
+            headers_string.push_str(&format!("{}: {}\r\n", key, value.join(",")));
+        }
+        headers_string
+    }
+
+    pub fn parse_and_set_headers(&mut self, headers_string: String) {
+        let mut headers = HashMap::new();
+        for line in headers_string.lines() {
+            let mut split = line.split(":");
+            let key = split.next().unwrap();
+            let values = split.next().unwrap().to_string();
+            for val in values.split(",") {
+                let entry = headers.entry(key.to_string()).or_insert(Vec::new());
+                entry.push(val.to_string());
+            }
+        }
+        self.headers = headers;
     }
 
     // I'm almost sure this is not going to work, since the serialization format

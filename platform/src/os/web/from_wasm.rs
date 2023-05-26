@@ -146,6 +146,7 @@ pub struct FromWasmHTTPRequest {
     pub id: String,
     pub url: String,
     pub method: String,
+    pub headers: String,
     pub body: WasmDataU8,
 }
 
