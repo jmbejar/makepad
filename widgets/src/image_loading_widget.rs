@@ -1,9 +1,7 @@
-use {
-    crate::{
+use crate::{
         makepad_image_formats::*,
         makepad_draw::*,
-    }
-};
+    };
 
 pub trait ImageLoadingWidget {
     fn image_filename(&self) -> &LiveDependency;
@@ -23,7 +21,7 @@ pub trait ImageLoadingWidget {
                             Self::load_image_dependency(cx, image_path, index, nodes)
                         {
                             cx.image_cache
-                                .insert(image_path.to_string(), buffer.clone());
+                                .put(image_path, buffer.clone());
                             Some(buffer)
                         } else {
                             None

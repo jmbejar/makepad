@@ -11,7 +11,7 @@ use {
         cell::RefCell,
     },
     crate::{
-        image::ImageBuffer,
+        image::LRUCache,
         makepad_live_compiler::{
             LiveRegistry
         },
@@ -128,7 +128,7 @@ pub struct Cx {
     pub(crate) executor: Option<Executor>,
     pub(crate) spawner: Spawner,
 
-    pub image_cache: HashMap<String, ImageBuffer>
+    pub image_cache: LRUCache,
 }
 
 #[derive(Clone)]
@@ -280,7 +280,7 @@ impl Cx {
             executor: Some(executor),
             spawner,
             
-            image_cache: HashMap::new(),
+            image_cache: LRUCache::new(10),
 
             self_ref: None
         }
