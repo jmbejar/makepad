@@ -15,7 +15,7 @@ pub trait ImageLoadingWidget {
             let buffer = {
                 if image_path.len() > 0 {
                     if let Some(buffer) = cx.image_cache.get(image_path) {
-                        Some(buffer.clone())
+                        Some(buffer)
                     } else {
                         if let Some(buffer) =
                             Self::load_image_dependency(cx, image_path, index, nodes)
