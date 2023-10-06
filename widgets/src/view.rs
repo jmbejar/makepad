@@ -302,6 +302,27 @@ impl ViewRef {
             0
         }
     }
+
+    pub fn append_child(&self, cx: &mut Cx, id: LiveId, ptr: Option<LivePtr>) -> Option<WidgetRef> {
+        if let Some(mut inner) = self.borrow_mut() {
+            inner.draw_order.push(id);
+            let widget = inner.children.get_or_insert(cx, id, | cx | {
+                WidgetRef::new_from_ptr(cx, ptr)
+            });
+
+            Some(widget.clone())
+        }
+        else {
+            None
+        }
+    }
+
+    pub fn clear_children(&self) {
+        if let Some(mut inner) = self.borrow_mut() {
+            inner.draw_order.clear();
+            inner.children.clear();
+        }
+    }
 }
 
 impl ViewSet {
