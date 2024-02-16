@@ -36,8 +36,24 @@ live_design!{
                 label1 = <Label> {
                     draw_text: {
                         color: #f
-                    },
-                    text: "Counter: 0"
+                        text_style: {
+                            font_size: (11),
+                            font: {path: dep("crate://self/resources/Inter-Regular.ttf")}
+                        }
+                    }
+                    text: "Qwen (abbr. for Tongyi Qianwen 通义千问) refers to the large language model family built by Alibaba Cloud"
+                }
+
+                <Label> {
+                    width: 400
+                    draw_text: {
+                        color: #f
+                        text_style: {
+                            font_size: (11),
+                            font: {path: dep("crate://self/resources/Inter-Regular.ttf")}
+                        }
+                    }
+                    text: "Qwen (abbr. for Tongyi Qianwen 通义千问) refers to the large language model family built by Alibaba Cloud"
                 }
                 <Html>{
                     text:"this<a href='thing'>is basichtml</a><tag prop/>text<bold/>"
