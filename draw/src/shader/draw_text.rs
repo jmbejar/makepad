@@ -312,6 +312,8 @@ pub struct DrawText {
     #[calc] pub delta: Vec2,
     #[calc] pub shader_font_size: f32,
     #[calc] pub advance: f32,
+
+    #[calc] pub chars_in_cluster: f32,
 }
 
 impl LiveHook for DrawText {
@@ -429,6 +431,8 @@ impl DrawText {
         // that can be individually shaped, then assembled visually.
         let bidi_info = unicode_bidi::BidiInfo::new(chunk, None);
         
+       // dbg!("arranca", &chunk);
+
         // NOTE(eddyb) the caller of `draw_inner` has already processed the text,
         // such that `chunk` won't contain e.g. any `\n`.
         if bidi_info.paragraphs.len() == 1 {
@@ -442,7 +446,8 @@ impl DrawText {
             for (run_level, run_range) in runs_with_level_and_range {
                 // FIXME(eddyb) UBA/`unicode_bidi` only offers a LTR/RTL distinction,
                 // even if `rustybuzz` has vertical `Direction`s as well.
-                let (glyph_ids, new_rustybuzz_buffer) = cxfont
+                
+                let (glyph_ids, cluster_sizes, new_rustybuzz_buffer) = cxfont
                     .shape_cache
                     .get_or_compute_glyph_ids(
                     (
@@ -456,7 +461,10 @@ impl DrawText {
                         rustybuzz_buffer,
                         owned_font_face
                     );
+
                 rustybuzz_buffer = new_rustybuzz_buffer;
+
+                let mut cluster_sizes_iter = cluster_sizes.iter();
                 for &glyph_id in glyph_ids {
                     let glyph = owned_font_face.with_ref(|face| font.get_glyph_by_id(face, glyph_id).unwrap());
                     
@@ -500,6 +508,7 @@ impl DrawText {
                     self.delta.y = delta_y as f32;
                     self.shader_font_size = self.text_style.font_size as f32;
                     self.advance = advance as f32; //char_offset as f32;
+                    self.chars_in_cluster = *(cluster_sizes_iter.next().unwrap()) as f32;
                     char_depth += zbias_step;
                     mi.instances.extend_from_slice(self.draw_vars.as_slice());
                     walk_x += advance;
@@ -849,19 +858,26 @@ impl DrawText {
         let rect_pos = area.get_read_ref(cx, live_id!(rect_pos), ShaderTy::Vec2).unwrap();
         let delta = area.get_read_ref(cx, live_id!(delta), ShaderTy::Vec2).unwrap();
         let advance = area.get_read_ref(cx, live_id!(advance), ShaderTy::Float).unwrap();
+        let chars_in_cluster = area.get_read_ref(cx, live_id!(chars_in_cluster), ShaderTy::Float).unwrap();
 
         let mut last_y = None;
         let mut newlines = 0;
+
+
         for i in 0..rect_pos.repeat {
+            let index = rect_pos.stride * i;
+            let x = rect_pos.buffer[index + 0] as f64 - delta.buffer[index + 0] as f64;
+            let y = rect_pos.buffer[index + 1] - delta.buffer[index + 1];
+            if last_y.is_none() {last_y = Some(y)}
+
+            // Adjustments for newlines and ligatures (clusters)
             while newline_indexes.contains(&(i + newlines)) {
                 newlines += 1;
             }
-
-            let index = rect_pos.stride * i;
-            let x = rect_pos.buffer[index + 0] as f64 - delta.buffer[index + 0] as f64;
-
-            let y = rect_pos.buffer[index + 1] - delta.buffer[index + 1];
-            if last_y.is_none() {last_y = Some(y)}
+            if chars_in_cluster.buffer[index] as i32 - 1 > 0 {
+                newlines += (chars_in_cluster.buffer[index] as i32 - 1) as usize;
+            };
+            
             let advance = advance.buffer[index + 0] as f64;
             if i > 0 && (y - last_y.unwrap()) > 0.001 && pos.y < last_y.unwrap() as f64 + line_spacing as f64 {
                 return Some(i - 1 + newlines)
@@ -946,17 +962,34 @@ impl DrawText {
         if !area.is_valid(cx) {
             return None
         }
-        // Adjustment because of newlines characters (they are not in the buffers)
-        let index_offset = newline_indexes.iter().filter(|&&i| i < index).count();
-        let (index, pos) = if newline_indexes.contains(&(index)){
-            (index - index_offset - 1, pos + 1.0)
-        } else {
-            (index - index_offset, pos)
-        };
         
         let rect_pos = area.get_read_ref(cx, live_id!(rect_pos), ShaderTy::Vec2).unwrap();
         let delta = area.get_read_ref(cx, live_id!(delta), ShaderTy::Vec2).unwrap();
         let advance = area.get_read_ref(cx, live_id!(advance), ShaderTy::Float).unwrap();
+        let chars_in_cluster = area.get_read_ref(cx, live_id!(chars_in_cluster), ShaderTy::Float).unwrap();
+
+        // Adjustment because of newlines characters (they are not in the buffers)
+        let index_offset = newline_indexes.iter().filter(|&&i| i < index).count();
+        let (mut index, pos) = if newline_indexes.contains(&(index)){
+            (index - index_offset - 1, pos + 1.0)
+        } else {
+            (index - index_offset, pos)
+        };
+
+        // Adjustment for clusters (ligatures)
+        if index > 0 {
+            let mut acc: i32 = 0;
+            let mut corrected_index: i32 = 0;
+            while acc < index as i32 {
+                corrected_index += 1;
+                dbg!(acc, corrected_index, index);
+                acc += chars_in_cluster.buffer[(corrected_index as usize - 1) * rect_pos.stride] as i32;
+                
+            }
+
+            dbg!(index, corrected_index);
+            index = corrected_index as usize;
+        }
         
         if rect_pos.repeat == 0 {
             return None

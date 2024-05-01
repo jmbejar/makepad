@@ -397,6 +397,7 @@ pub struct CxFont {
 pub struct ShapeCache {
     pub keys: VecDeque<(Direction, Rc<str>)>,
     pub glyph_ids: HashMap<(Direction, Rc<str>), Vec<usize>>,
+    pub cluster_sizes: HashMap<(Direction, Rc<str>), Vec<usize>>,
 }
 
 impl ShapeCache {
@@ -407,6 +408,7 @@ impl ShapeCache {
         Self {
             keys: VecDeque::new(),
             glyph_ids: HashMap::new(),
+            cluster_sizes: HashMap::new(),
         }
     }
 
@@ -424,11 +426,11 @@ impl ShapeCache {
     // Note that owned_font_face should be the same as the CxFont to which this cache belongs,
     // otherwise you will not get correct results.
     pub fn get_or_compute_glyph_ids(
-        &mut self, 
+        &mut self,
         key: (Direction, &str),
         mut rustybuzz_buffer: UnicodeBuffer,
         owned_font_face: &crate::owned_font_face::OwnedFace
-    ) -> (&[usize], UnicodeBuffer) {
+    ) -> (&[usize], &[usize], UnicodeBuffer) {
         if !self.glyph_ids.contains_key(&key as &dyn ShapeCacheKey) {
             if self.keys.len() == Self::MAX_SIZE {
                 for run in self.keys.drain(..Self::MAX_SIZE / 2) {
@@ -440,14 +442,29 @@ impl ShapeCache {
             rustybuzz_buffer.set_direction(direction);
             rustybuzz_buffer.push_str(string);
             let glyph_buffer = owned_font_face.with_ref( | face | rustybuzz::shape(face, &[], rustybuzz_buffer));
-            let glyph_ids: Vec<_> = glyph_buffer.glyph_infos().iter().map( | glyph | glyph.glyph_id as usize).collect();
+            let glyph_ids: Vec<_> = glyph_buffer.glyph_infos().iter().map( | glyph | {
+                glyph.glyph_id as usize
+            }).collect();
+            
+            let glyph_cluster_ids: Vec<_> = glyph_buffer.glyph_infos().iter().map( | glyph | {
+                glyph.cluster as usize
+            }).collect();
+
+            let mut cluster_sizes = vec![];
+            let mut last_index: i32 = -1;
+            for info in glyph_buffer.glyph_infos() {
+                cluster_sizes.push((info.cluster as i32 - last_index) as usize);
+                last_index = info.cluster as i32;
+            }
+
             rustybuzz_buffer = glyph_buffer.clear();
 
             let owned_string: Rc<str> = string.into();
             self.keys.push_back((direction, owned_string.clone()));
-            self.glyph_ids.insert((direction, owned_string), glyph_ids);
+            self.glyph_ids.insert((direction, owned_string.clone()), glyph_ids);
+            self.cluster_sizes.insert((direction, owned_string), cluster_sizes);
         }
-        (&self.glyph_ids[&key as &dyn ShapeCacheKey], rustybuzz_buffer)
+        (&self.glyph_ids[&key as &dyn ShapeCacheKey], &self.cluster_sizes[&key as &dyn ShapeCacheKey], rustybuzz_buffer)
     }
 }
 
