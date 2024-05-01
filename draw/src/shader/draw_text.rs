@@ -853,7 +853,7 @@ impl DrawText {
         let mut last_y = None;
         let mut newlines = 0;
         for i in 0..rect_pos.repeat {
-            if newline_indexes.contains(&(i + newlines)) {
+            while newline_indexes.contains(&(i + newlines)) {
                 newlines += 1;
             }
 
