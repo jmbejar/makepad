@@ -666,4 +666,11 @@ impl TextInputRef {
             inner.set_cursor(head, tail);
         }
     }
+
+    pub fn set_key_focus(&self, cx: &mut Cx) {
+        if let Some(inner) = self.borrow() {
+            inner.set_key_focus(cx);
+        }
+    }
+
 }
