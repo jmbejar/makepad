@@ -50,6 +50,7 @@ live_design!{
     import crate::html::HtmlBase;
     import crate::html::HtmlLinkBase;
     import crate::markdown::MarkdownBase,
+    import crate::markdown::MarkdownLinkBase;
     import crate::root::RootBase;
     
     import crate::designer::DesignerBase;
@@ -930,6 +931,7 @@ live_design!{
     HtmlBase = <HtmlBase>{}
     HtmlLinkBase = <HtmlLinkBase>{}
     MarkdownBase = <MarkdownBase>{}
+    MarkdownLinkBase = <MarkdownLinkBase>{}
     KeyboardViewBase = <KeyboardViewBase>{}
     PageFlipBase = <PageFlipBase>{}
     ViewBase = <ViewBase>{}
