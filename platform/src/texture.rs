@@ -2,7 +2,7 @@ use {
     crate::{
         id_pool::*,
         cx::Cx,
-        makepad_math::Rect,
+        makepad_math::*,
         os::CxOsTexture,
     },
     std::rc::Rc,
@@ -100,17 +100,17 @@ impl TextureSize{
 #[derive(Clone, Debug)]
 pub enum TextureFormat {
     Unknown,
-    VecBGRAu8_32{width:usize, height:usize, data:Vec<u32>},
-    VecMipBGRAu8_32{width:usize, height:usize, data:Vec<u32>, max_level:Option<usize>},
-    VecRGBAf32{width:usize, height:usize, data:Vec<f32>},
-    VecRu8{width:usize, height:usize, data:Vec<u8>, unpack_row_length:Option<usize>},
-    VecRGu8{width:usize, height:usize, data:Vec<u8>, unpack_row_length:Option<usize>},
-    VecRf32{width:usize, height:usize, data:Vec<f32>},
-    DepthD32{size:TextureSize},
-    RenderBGRAu8{size:TextureSize},
-    RenderRGBAf16{size:TextureSize},
-    RenderRGBAf32{size:TextureSize},
-    SharedBGRAu8{width:usize, height:usize, id:crate::cx_stdin::PresentableImageId},
+    VecBGRAu8_32{width:usize, height:usize, data:Option<Vec<u32>>, updated: TextureUpdated},
+    VecMipBGRAu8_32{width:usize, height:usize, data:Option<Vec<u32>>, max_level:Option<usize>, updated: TextureUpdated},
+    VecRGBAf32{width:usize, height:usize, data:Option<Vec<f32>>, updated: TextureUpdated},
+    VecRu8{width:usize, height:usize, data:Option<Vec<u8>>, unpack_row_length:Option<usize>, updated: TextureUpdated},
+    VecRGu8{width:usize, height:usize, data:Option<Vec<u8>>, unpack_row_length:Option<usize>, updated: TextureUpdated},
+    VecRf32{width:usize, height:usize, data:Option<Vec<f32>>, updated: TextureUpdated},
+    DepthD32{size:TextureSize, initial: bool},
+    RenderBGRAu8{size:TextureSize, initial: bool},
+    RenderRGBAf16{size:TextureSize, initial: bool},
+    RenderRGBAf32{size:TextureSize, initial: bool},
+    SharedBGRAu8{width:usize, height:usize, id:crate::cx_stdin::PresentableImageId, initial: bool},
     #[cfg(any(target_os = "android", target_os = "linux"))]
     VideoRGB,
 }
@@ -126,11 +126,11 @@ pub(crate) struct TextureAlloc{
 #[allow(unused)]    
 #[derive(Clone, Debug)]
 pub enum TextureCategory{
-    Vec{updated:Updated},
-    Render{initial:bool},
-    DepthBuffer{initial:bool},
-    Shared{initial:bool},
-    Video{initial:bool},
+    Vec,
+    Render,
+    DepthBuffer,
+    Shared,
+    Video,
 }
 
 impl PartialEq for TextureCategory{
@@ -146,17 +146,28 @@ impl PartialEq for TextureCategory{
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum Updated {
+pub enum TextureUpdated {
     Empty,
-    Partial(Rect),
+    Partial(RectUsize),
     Full,
 }
 
-impl Updated {
+impl TextureUpdated {
     pub fn is_empty(&self) -> bool {
         match self {
-            Updated::Empty => true,
+            TextureUpdated::Empty => true,
             _ => false,
+        }
+    }
+
+    pub fn update(self, dirty_rect: Option<RectUsize>) -> Self {
+        match dirty_rect {
+            Some(dirty_rect) => match self {
+                TextureUpdated::Empty => TextureUpdated::Partial(dirty_rect),
+                TextureUpdated::Partial(rect) => TextureUpdated::Partial(rect.union(dirty_rect)),
+                TextureUpdated::Full => TextureUpdated::Full,
+            },
+            None => TextureUpdated::Full,
         }
     }
 }
@@ -176,76 +187,62 @@ pub(crate) enum TexturePixel{
 }
 
 impl CxTexture{
-    pub(crate) fn set_updated(&mut self, updated: Updated) {
-        let Some (alloc) = &mut self.alloc else {
-            return;
-        };
-        let TextureCategory::Vec {
-            updated: updated_slot 
-        } = &mut alloc.category else {
-            return;
-        };
-        *updated_slot = updated;
-    }
-    
-    pub(crate) fn get_and_clear_updated(&mut self) -> Updated {
-        let Some(alloc) = &mut self.alloc else {
-            return Updated::Empty;
-        };
-        let TextureCategory::Vec {
-            updated: updated_slot
-        } = &mut alloc.category else {
-            return Updated::Empty;
-        };
-        let updated = *updated_slot;
-        *updated_slot = Updated::Empty;
-        if !updated.is_empty() {
-            match &self.format {
-                TextureFormat::VecBGRAu8_32 {
-                    width,
-                    height,
-                    data
-                } => {
-                    if width * height != data.len() {
-                        error!("Texture buffer size incorrect: {} * {} != {}", width, height, data.len());
-                        return Updated::Empty;
-                    }
-                }
-                _ => {}
-            }
+    pub(crate) fn updated(&self) -> TextureUpdated {
+        match self.format {
+            TextureFormat::VecBGRAu8_32 { updated, .. } => updated,
+            TextureFormat::VecMipBGRAu8_32{ updated, .. } => updated,
+            TextureFormat::VecRGBAf32 { updated, .. } => updated,
+            TextureFormat::VecRu8 { updated, .. } => updated,
+            TextureFormat::VecRGu8 { updated, .. } => updated,
+            TextureFormat::VecRf32 { updated, .. } => updated,
+            _ => panic!(),
         }
+    }
+
+    pub(crate) fn initial(&mut self) -> bool {
+        match self.format {
+            TextureFormat::DepthD32{ initial, .. } => initial,
+            TextureFormat::RenderBGRAu8{ initial, .. } => initial,
+            TextureFormat::RenderRGBAf16{ initial, .. } => initial,
+            TextureFormat::RenderRGBAf32{ initial, .. } => initial,
+            TextureFormat::SharedBGRAu8{ initial, .. } => initial,
+            _ => panic!()
+        }
+    }
+
+    pub(crate) fn set_updated(&mut self, updated: TextureUpdated) {
+        *match &mut self.format {
+            TextureFormat::VecBGRAu8_32 { updated, .. } => updated,
+            TextureFormat::VecMipBGRAu8_32{ updated, .. } => updated,
+            TextureFormat::VecRGBAf32 { updated, .. } => updated,
+            TextureFormat::VecRu8 { updated, .. } => updated,
+            TextureFormat::VecRGu8 { updated, .. } => updated,
+            TextureFormat::VecRf32 { updated, .. } => updated,
+            _ => panic!(),
+        } = updated;
+    }
+
+    pub fn set_initial(&mut self, initial: bool) {
+        *match &mut self.format {
+            TextureFormat::DepthD32{ initial, .. } => initial,
+            TextureFormat::RenderBGRAu8{ initial, .. } => initial,
+            TextureFormat::RenderRGBAf16{ initial, .. } => initial,
+            TextureFormat::RenderRGBAf32{ initial, .. } => initial,
+            TextureFormat::SharedBGRAu8{ initial, .. } => initial,
+            _ => panic!()
+        } = initial;
+    }
+
+    pub(crate) fn take_updated(&mut self) -> TextureUpdated {
+        let updated = self.updated();
+        self.set_updated(TextureUpdated::Empty);
         updated
     }
     
-    pub fn set_initial(&mut self, init:bool){
-        if let Some(alloc) = &mut self.alloc{
-            match &mut alloc.category{
-                TextureCategory::Render{initial} |
-                TextureCategory::DepthBuffer{initial} |
-                TextureCategory::Shared{initial}=>{
-                    *initial = init;
-                }
-                _=>()
-            }
-        }
-    }
-    #[allow(unused)]    
-    pub(crate) fn check_initial(&mut self)->bool{
-        if let Some(alloc) = &mut  self.alloc{
-            match &mut alloc.category{
-                TextureCategory::Render{initial} |
-                TextureCategory::DepthBuffer{initial} |
-                TextureCategory::Shared{initial} |
-                TextureCategory::Video { initial }
-                =>{
-                    let u = *initial;
-                    *initial = false;
-                    return u
-                }
-                _=>()
-            }
-        }
-        false
+    pub(crate) fn take_initial(&mut self) -> bool {
+        let initial = self.initial();
+        self.set_initial(false);
+        initial
     }
         
     pub(crate) fn alloc_vec(&mut self)->bool{
@@ -363,37 +360,37 @@ impl TextureFormat{
                 width:*width,
                 height:*height,
                 pixel:TexturePixel::BGRAu8,
-                category: TextureCategory::Vec{updated:Updated::Full}
+                category: TextureCategory::Vec,
             }),
             Self::VecMipBGRAu8_32{width,height,..}=>Some(TextureAlloc{
                 width:*width,
                 height:*height,
                 pixel:TexturePixel::BGRAu8,
-                category: TextureCategory::Vec{updated:Updated::Full}
+                category: TextureCategory::Vec,
             }),
             Self::VecRGBAf32{width,height,..}=>Some(TextureAlloc{
                 width:*width,
                 height:*height,
                 pixel:TexturePixel::RGBAf32,
-                category: TextureCategory::Vec{updated:Updated::Full}
+                category: TextureCategory::Vec,
             }),
             Self::VecRu8{width,height,..}=>Some(TextureAlloc{
                 width:*width,
                 height:*height,
                 pixel:TexturePixel::Ru8,
-                category: TextureCategory::Vec{updated:Updated::Full}
+                category: TextureCategory::Vec,
             }),
             Self::VecRGu8{width,height,..}=>Some(TextureAlloc{
                 width:*width,
                 height:*height,
                 pixel:TexturePixel::RGu8,
-                category: TextureCategory::Vec{updated:Updated::Full}
+                category: TextureCategory::Vec,
             }),
             Self::VecRf32{width,height,..}=>Some(TextureAlloc{
                 width:*width,
                 height:*height,
                 pixel:TexturePixel::Rf32,
-                category: TextureCategory::Vec{updated:Updated::Full}
+                category: TextureCategory::Vec,
             }),
             _=>None
         }
@@ -407,7 +404,7 @@ impl TextureFormat{
                     width,
                     height,
                     pixel:TexturePixel::BGRAu8,
-                    category: TextureCategory::Render{initial:true}
+                    category: TextureCategory::Render,
                 })
             }
             Self::RenderRGBAf16{size,..}=>{
@@ -416,7 +413,7 @@ impl TextureFormat{
                     width,
                     height,
                     pixel:TexturePixel::RGBAf16,
-                    category: TextureCategory::Render{initial:true}
+                    category: TextureCategory::Render,
                 })
             }
             Self::RenderRGBAf32{size,..}=>{
@@ -425,7 +422,7 @@ impl TextureFormat{
                     width,
                     height,
                     pixel:TexturePixel::RGBAf32,
-                    category: TextureCategory::Render{initial:true}
+                    category: TextureCategory::Render,
                 })
             }
             _=>None
@@ -440,7 +437,7 @@ impl TextureFormat{
                     width,
                     height,
                     pixel:TexturePixel::D32,
-                    category: TextureCategory::DepthBuffer{initial:true}
+                    category: TextureCategory::DepthBuffer,
                 })
             },
             _=>None
@@ -456,7 +453,7 @@ impl TextureFormat{
                     width: 0,
                     height: 0,
                     pixel:TexturePixel::VideoRGB,
-                    category: TextureCategory::Video{initial:true}
+                    category: TextureCategory::Video,
                 })
             },
             _ => None
@@ -471,7 +468,7 @@ impl TextureFormat{
                     width:*width,
                     height:*height,
                     pixel:TexturePixel::BGRAu8,
-                    category: TextureCategory::Shared{initial:true},
+                    category: TextureCategory::Shared,
                 })
             }
             _=>None
@@ -507,48 +504,69 @@ impl Texture {
     pub fn get_format<'a>(&self, cx: &'a mut Cx) -> &'a mut TextureFormat {
         &mut cx.textures[self.texture_id()].format
     }
-    
-    pub fn swap_vec_u32(&self, cx: &mut Cx, image: &mut Vec<u32>) {
-        let cxtexture = &mut cx.textures[self.texture_id()];
-        match &mut cxtexture.format{
-            TextureFormat::VecBGRAu8_32{data,..} => {
-                std::mem::swap(data, image);
-                cxtexture.set_updated(Updated::Full);
-            }
-            _=>{
-                panic!("Not the correct texture desc for u32 image buffer")
-            }
-        }
+
+    pub fn take_vec_u32(&self, cx: &mut Cx) -> Vec<u32> {
+        let cx_texture = &mut cx.textures[self.texture_id()];
+        let data = match &mut cx_texture.format {
+            TextureFormat::VecBGRAu8_32 { data, .. } => data,
+            _ => panic!("incorrect texture format for u32 image data"),
+        };
+        data.take().expect("image data already taken")
+    }
+
+    pub fn put_back_vec_u32(&self, cx: &mut Cx, new_data: Vec<u32>, dirty_rect: Option<RectUsize>) {
+        let cx_texture = &mut cx.textures[self.texture_id()];
+        let (data, updated) = match &mut cx_texture.format {
+            TextureFormat::VecBGRAu8_32 { data, updated, .. } => (data, updated),
+            _ => panic!("incorrect texture format for u32 image data"),
+        };
+        assert!(data.is_none(), "image data not taken or already put back");
+        *data = Some(new_data);
+        *updated = updated.update(dirty_rect);
+    }
+
+    pub fn take_vec_u8(&self, cx: &mut Cx) -> Vec<u8> {
+        let cx_texture = &mut cx.textures[self.texture_id()];
+        let data = match &mut cx_texture.format {
+            TextureFormat::VecRu8 { data, .. } => data,
+            TextureFormat::VecRGu8 { data, .. } => data,
+            _ => panic!("incorrect texture format for u32 image data"),
+        };
+        data.take().expect("image data already taken")
+    }
+
+    pub fn put_back_vec_u8(&self, cx: &mut Cx, new_data: Vec<u8>, dirty_rect: Option<RectUsize>) {
+        let cx_texture = &mut cx.textures[self.texture_id()];
+        let (data, updated) = match &mut cx_texture.format {
+            TextureFormat::VecRu8 { data, updated, .. } => (data, updated),
+            TextureFormat::VecRGu8 { data,updated, .. } => (data, updated),
+            _ => panic!("incorrect texture format for u8 image data"),
+        };
+        assert!(data.is_none(), "image data not taken or already put back");
+        *data = Some(new_data);
+        *updated = updated.update(dirty_rect);
     }
             
-    pub fn swap_vec_u8(&self, cx: &mut Cx, image: &mut Vec<u8>) {
-        let cxtexture = &mut cx.textures[self.texture_id()];
-        match &mut cxtexture.format{
-            TextureFormat::VecRu8{data,..} | TextureFormat::VecRGu8 { data, ..} => {
-                std::mem::swap(data, image);
-                cxtexture.set_updated(Updated::Full);
-            },
-            _=>{
-                panic!("Not the correct texture desc for u8 image buffer")
-            }
-        }
+    pub fn take_vec_f32(&self, cx: &mut Cx) -> Vec<f32> {
+        let cx_texture = &mut cx.textures[self.texture_id()];
+        let data = match &mut cx_texture.format{
+            TextureFormat::VecRf32 { data, .. } => data,
+            TextureFormat::VecRGBAf32{data, .. } => data,
+            _ => panic!("Not the correct texture desc for f32 image data"),
+        };
+        data.take().expect("image data already taken")
     }
-    
-    pub fn swap_vec_f32(&self, cx: &mut Cx, image: &mut Vec<f32>) {
-        let cxtexture = &mut cx.textures[self.texture_id()];
-        match &mut cxtexture.format{
-            TextureFormat::VecRf32{data,..} => {
-                std::mem::swap(data, image);
-                cxtexture.set_updated(Updated::Full);
-            }
-            TextureFormat::VecRGBAf32{data,..} => {
-                std::mem::swap(data, image);
-                cxtexture.set_updated(Updated::Full);
-            }
-            _=>{
-                panic!("Not the correct texture desc for f32 image buffer")
-            }
-        }
+
+    pub fn put_back_vec_f32(&self, cx: &mut Cx, new_data: Vec<f32>, dirty_rect: Option<RectUsize>) {
+        let cx_texture = &mut cx.textures[self.texture_id()];
+        let (data, updated) = match &mut cx_texture.format {
+            TextureFormat::VecRf32 { data, updated, .. } => (data, updated),
+            TextureFormat::VecRGBAf32 { data, updated, .. } => (data, updated),
+            _ => panic!("incorrect texture format for f32 image data"),
+        };
+        assert!(data.is_none(), "image data not taken or already put back");
+        *data = Some(new_data);
+        *updated = updated.update(dirty_rect);
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::{makepad_derive_widget::*, makepad_draw::*, widget::*};
+use crate::{makepad_derive_widget::*, makepad_draw::*, widget::*,};
 live_design! {
     ButtonBase = {{Button}} {}
 }
