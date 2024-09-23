@@ -153,6 +153,13 @@ impl Slider {
             self.update_text_input();
         }
     }
+
+    fn set_range(&mut self, cx: &mut Cx, min: f64, max: f64) {
+        self.min = min;
+        self.max = max;
+        self.draw_slider.redraw(cx);
+        self.update_text_input_and_redraw(cx);
+    }
 }
 
 impl WidgetDesign for Slider{
@@ -290,7 +297,6 @@ impl Widget for Slider {
             self.update_text_input()
         }
     }
-        
 }
 
 impl SliderRef{
@@ -305,6 +311,12 @@ impl SliderRef{
     pub fn set_value(&self, v: f64) {
         if let Some(mut inner) = self.borrow_mut() {
             inner.set_value(v)
+        }
+    }
+
+    pub fn set_range(&self, cx: &mut Cx, min: f64, max: f64) {
+        if let Some(mut inner) = self.borrow_mut() {
+            inner.set_range(cx, min, max)
         }
     }
     
