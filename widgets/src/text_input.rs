@@ -52,6 +52,10 @@ impl TextInput {
         self.cursor = cursor;
     }
 
+    pub fn get_cursor(&self) -> Cursor {
+        self.cursor
+    }
+
     pub fn select_all(&mut self) {
         self.set_cursor(Cursor {
             head: IndexAffinity {
