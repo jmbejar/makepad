@@ -185,6 +185,10 @@ impl DesignerOutlineTreeNode {
         self.button_open.animator_toggle(cx, is, animate, id!(open.on), id!(open.off));
     }
     
+    pub fn set_folder_is_open(&mut self, cx: &mut Cx, is: bool, animate: Animate) {
+        self.animator_toggle(cx, is, animate, id!(open.on), id!(open.off));
+    }
+    
     pub fn handle_event(
         &mut self,
         cx: &mut Cx,
@@ -427,6 +431,46 @@ impl DesignerOutlineTree {
 
         cx.start_dragging(items);
     }
+    
+    pub fn set_folder_is_open(
+        &mut self,
+        cx: &mut Cx,
+        node_id: LiveId,
+        is_open: bool,
+        animate: Animate,
+    ) {
+        if is_open {
+            self.open_nodes.insert(node_id);
+        }
+        else {
+            self.open_nodes.remove(&node_id);
+        }
+        if let Some((tree_node, _)) = self.tree_nodes.get_mut(&node_id) {
+            tree_node.set_folder_is_open(cx, is_open, animate);
+        }
+    }
+    /*
+    pub fn set_open_by_path(
+        &mut self,
+        cx: &mut Cx,
+        path: &str,
+        is_open: bool,
+        animate: Animate,
+    ) {
+        for (idx,_) in path.match_indices('/'){
+            let slice = &path[0..idx+1];
+            let hash =  LiveId::from_str(slice).into();
+            self.set_folder_is_open(cx, hash, is_open, animate);
+        }
+    }*/
+/*    
+    let folder1 =  LiveId::from_str("examples/").into();
+    file_tree.set_folder_is_open(cx, folder1, true, Animate::No);
+    let folder1 =  LiveId::from_str("examples/ironfish/").into();
+    file_tree.set_folder_is_open(cx, folder1, true, Animate::No);
+    let folder1 =  LiveId::from_str("examples/ironfish/src/app_desktop.rs/").into();
+    file_tree.set_folder_is_open(cx, folder1, true, Animate::No);
+*/    
 }
 
 //pub type LiveId = LiveId;
@@ -467,7 +511,9 @@ impl Widget for DesignerOutlineTree {
                     cx.set_key_focus(self.scroll_bars.area());
                     if let Some(last_selected) = self.selected_node_id {
                         if last_selected != node_id {
-                            self.tree_nodes.get_mut(&last_selected).unwrap().0.set_is_selected(cx, false, Animate::Yes);
+                            if let Some(node) = self.tree_nodes.get_mut(&last_selected){
+                                node.0.set_is_selected(cx, false, Animate::Yes);
+                            }
                         }
                     }
                     self.selected_node_id = Some(node_id);

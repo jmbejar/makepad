@@ -94,6 +94,7 @@ pub use crate::{
     slider::*,
     root::*,
     text_flow::*,
+    markdown::*,
     html::*,
     check_box::*,
     drop_down::*,
@@ -122,7 +123,6 @@ pub use crate::{
     toggle_panel::*,
     widget::{
         WidgetSet,
-        WidgetSetIterator,
         WidgetUid,
         DrawStep,
         DrawStepApi,
@@ -140,6 +140,7 @@ pub use crate::{
         WidgetNode,
         WidgetRegistry,
         WidgetFactory,
+        WidgetSetIterator,
         DrawStateWrap,
     }
 };

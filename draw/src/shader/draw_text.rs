@@ -71,9 +71,9 @@ live_design!{
             let s = sample2d(self.tex, pos).x;
             let curve = 0.5; 
             //if (self.sdf_radius != 0.0) {
-                // HACK(eddyb) harcoded atlas size (see asserts below).
-                let texel_coords = pos.xy * 4096.0;
-                s = clamp((s - (1.0 - sdf_cutoff)) * sdf_radius / scale + 0.5, 0.0, 1.0);
+            // HACK(eddyb) harcoded atlas size (see asserts below).
+            let texel_coords = pos.xy * 4096.0;
+            s = clamp((s - (1.0 - sdf_cutoff)) * sdf_radius / scale + 0.5, 0.0, 1.0);
             //} else {
             //    s = pow(s, curve);
             //}
@@ -154,7 +154,7 @@ pub struct TextStyle {
     //#[live(0.5)] pub curve: f32,
     #[live(0.88)] pub line_scale: f64,
     #[live(1.4)] pub line_spacing: f64,
-    #[live(1.1)] pub top_drop: f64,
+    //#[live(1.1)] pub top_drop: f64,
     #[live(1.3)] pub height_factor: f64,
 }
 
@@ -255,7 +255,6 @@ impl DrawText {
         //    .map_or((0.0, 0.0), |sdf| (sdf.params.radius, sdf.params.cutoff));
         //self.draw_vars.user_uniforms[0] = sdf_radius;
         //self.draw_vars.user_uniforms[1] = sdf_cutoff;
-        //println!("{}, {}", sdf_radius, sdf_cutoff);
     }
     
     pub fn get_line_spacing(&self) -> f64 {
@@ -971,6 +970,7 @@ impl DrawText {
                         glyph_infos,
                         ..
                     } => {
+                        cx.set_turtle_wrap_spacing(line_spacing - line_height);
                         let rect = cx.walk_turtle(Walk {
                             abs_pos: None,
                             margin: Margin::default(),

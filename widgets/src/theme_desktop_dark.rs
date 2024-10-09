@@ -576,7 +576,6 @@ live_design! {
         height:Fit,
         padding: <THEME_MSPACE_1> {}
 
-        line_spacing: (THEME_FONT_LINE_SPACING),
         font_size: (THEME_FONT_SIZE_P),
         font_color: (THEME_COLOR_TEXT_DEFAULT),
 
@@ -784,7 +783,6 @@ live_design! {
         height:Fit,
         padding: 0
         
-        line_spacing: (THEME_FONT_LINE_SPACING),
         font_size: (THEME_FONT_SIZE_P),
         font_color: (THEME_COLOR_TEXT_DEFAULT),
         
@@ -1043,11 +1041,12 @@ live_design! {
         width:Fill, height:Fit,
         flow: RightWrap,
         padding: <THEME_MSPACE_1> {}
-
-        line_spacing: (THEME_FONT_LINE_SPACING),
-        font_size: (THEME_FONT_SIZE_P),
-        paragraph_spacing: 16,
         
+        font_size: (THEME_FONT_SIZE_P),
+        font_color: (THEME_COLOR_TEXT_DEFAULT),
+
+        paragraph_spacing: 16,
+        pre_code_spacing: 8,
         inline_code_padding: <THEME_MSPACE_1> {},
         inline_code_margin: <THEME_MSPACE_1> {},
         
@@ -2936,7 +2935,6 @@ live_design! {
 
             text_style: <THEME_FONT_REGULAR> {
                 font_size: (THEME_FONT_SIZE_P)
-                top_drop: 1.2,
             }
         }
 
@@ -4219,7 +4217,7 @@ live_design! {
 
             text_style: <THEME_FONT_REGULAR> {
                 font_size: (THEME_FONT_SIZE_P)
-                top_drop: 1.2,
+                //top_drop: 1.2,
             }
         }
 

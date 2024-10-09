@@ -1,4 +1,6 @@
 use crate::makepad_micro_serde::*;
+use crate::makepad_derive_live::*;
+use crate::action::*;
 use crate::log::LogLevel;
 pub use crate::makepad_live_compiler::live_node::LiveDesignInfo;
 // communication enums for studio
@@ -46,6 +48,15 @@ pub struct PatchFile{
     pub replace: String
 }
 
+#[derive(SerBin, DeBin, SerRon, DeRon, Debug, Clone)]
+pub struct ComponentPosition{
+    pub path: String,
+    pub left: f64,
+    pub top: f64,
+    pub right: f64,
+    pub bottom: f64
+}
+
 #[derive(SerBin, DeBin, Debug, Clone)]
 pub struct EditFile{
     pub file_name: String,
@@ -63,19 +74,31 @@ pub enum AppToStudio{
     GPUSample(GPUSample),
     JumpToFile(JumpToFile),
     PatchFile(PatchFile),
+    DesignerComponentMoved(ComponentPosition),
     EditFile(EditFile),
+    DesignerStarted,
+    DesignerFileSelected{
+        file_name:String,
+    },
     FocusDesign
 }
 
 #[derive(SerBin, DeBin)]
 pub struct AppToStudioVec(pub Vec<AppToStudio>);
 
-#[derive(SerBin, DeBin)]
+#[derive(Debug, DefaultNone, SerBin, DeBin)]
 pub enum StudioToApp{
     LiveChange{
         file_name: String,
         content: String
-    }
+    },
+    DesignerLoadState{
+        positions: Vec<ComponentPosition>
+    },
+    DesignerSelectFile{
+        file_name: String,
+    },
+    None,
 }
 
 #[derive(SerBin, DeBin)]

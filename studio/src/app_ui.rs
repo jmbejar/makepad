@@ -4,8 +4,8 @@ live_design!{
     import makepad_draw::shader::std::*;
     import makepad_widgets::base::*;
     import makepad_widgets::theme_desktop_dark::*;
-    import makepad_studio::studio_editor::StudioEditor;
-    import makepad_studio::ai_chat::AiChat;
+    import makepad_studio::studio_editor::StudioCodeEditor;
+    import makepad_studio::ai_chat::ai_chat_view::AiChatView;
     import makepad_studio::studio_file_tree::StudioFileTree;
     import makepad_studio::run_view::RunView;
     import makepad_studio::log_list::LogList;
@@ -191,6 +191,17 @@ live_design!{
                         svg_file: dep("crate://self/resources/icons/icon_editor.svg"),
                     }
                 }
+                AiFirstTab = <IconTab> {
+                    spacing: (THEME_SPACE_2)
+                    icon_walk: {
+                        width: 6.
+                        margin: { top: 3. }
+                    }
+                    draw_icon: {
+                        color: (STUDIO_PALETTE_6)
+                        svg_file: dep("crate://self/resources/icons/icon_editor.svg"),
+                    }
+                }
                 DesignFirstTab = <IconTab> {
                     spacing: (THEME_SPACE_2)
                     icon_walk: {
@@ -335,7 +346,7 @@ live_design!{
             }
 
             run_tabs = Tabs {
-                tabs: [run_first],
+                tabs: [run_first,ai_first],
                 selected: 0
             }
             /*
@@ -357,25 +368,29 @@ live_design!{
             }
 
             run_first = Tab {
-                name: "App >"
+                name: ">"
                 template: RunFirstTab,
                 kind: RunFirst
             }
 
             design_first = Tab {
-                name: "Design >"
+                name: ">"
                 template: DesignFirstTab,
                 kind: DesignFirst
             }
 
             edit_first = Tab {
-                name: "Code >"
+                name: ">"
                 template: EditFirstTab,
                 kind: EditFirst
             }
-
+            ai_first = Tab {
+                name: ">"
+                template: AiFirstTab,
+                kind: AiFirst
+            }
             outline_first = Tab {
-                name: "Scene >"
+                name: ">"
                 template: OutlineFirstTab,
                 kind: OutlineFirst
             }
@@ -385,13 +400,7 @@ live_design!{
                 template: RunListTab,
                 kind: RunList
             }
-
-            file1 = Tab {
-                name: "app.rs",
-                template: PermanentTab,
-                kind: StudioEditor
-            }
-
+            
             log_list_tab = Tab {
                 name: "Log",
                 template: LogTab,
@@ -404,8 +413,7 @@ live_design!{
                 kind: Profiler
             }
 
-
-            StudioEditor = <View> {
+            CodeEditor = <View> {
                 flow: Down,
                 <DockToolbar> {
                     content = {
@@ -423,8 +431,13 @@ live_design!{
                         <ButtonFlat> { width: Fit, text: "Docs"}
                     }
                 }
-                editor = <StudioEditor> {} 
+                editor = <StudioCodeEditor> {} 
             }
+            
+            AiChat = <AiChatView> {
+                flow: Down,
+            }
+            
             EditFirst = <RectView> {
                 <View> {
                     width: Fill, height: Fill,
@@ -436,6 +449,7 @@ live_design!{
                         align: { x: 0.5, y: 0.5 }
                         <Logo> {}
                     }
+                    
                     // <H3> {
                     //     width: Fit,
                     //     text: "Welcome to \nMakepad \n\n欢迎来到\nMakepad"
@@ -457,6 +471,18 @@ live_design!{
                 }
             }
             DesignFirst = <RectView> {
+                <View> {
+                    width: Fill, height: Fill
+                    flow: Down
+                    <DockToolbar> { content = <DockSettings> {} }
+                    <View> {
+                        width: Fill, height: Fill,
+                        align: { x: 0.5, y: 0.5 }
+                        <Logo> {}
+                    }
+                }
+            }
+            AiFirst = <RectView> {
                 <View> {
                     width: Fill, height: Fill
                     flow: Down
