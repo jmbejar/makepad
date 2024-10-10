@@ -18,71 +18,76 @@ live_design!{
     import makepad_widgets::theme_desktop_dark::*;
 
     User = <RoundedView>{
-        height: Fit
-
-        flow:Down
+        height: Fit,
+        flow: Down,
         margin: <THEME_MSPACE_2> {}
         padding: <THEME_MSPACE_H_2> { bottom: (THEME_SPACE_2) } 
         draw_bg: { color: (THEME_COLOR_U_1) }
 
         <View> {
             height: Fit, width: Fill,
-            align: { x: 0.0, y: 0.5 },
+            flow: Right,
+            align: { x: 0., y: 0. },
             spacing: (THEME_SPACE_3),
+            padding: { left: (THEME_SPACE_1), right: (THEME_SPACE_1), top: (THEME_SPACE_1) }
+
+            run_button = <ButtonFlat> {
+                width: Fit,
+                height: Fit,
+                padding: 6.,
+                margin: <THEME_MSPACE_V_1> {}
+                draw_icon: {
+                    color: (THEME_COLOR_MAKEPAD),
+                    svg_file: dep("crate://self/resources/icons/icon_run.svg"),
+                }
+                icon_walk: { width: 9. }
+            }
+
+            <Vr> { height: 17.5}
 
             <View> {
                 flow: Right,
                 width: Fit,
-                height: Fit,
-                align: { x: 0.0, y: 0.8 }
-            spacing: (THEME_SPACE_1)
+                spacing: (THEME_SPACE_1)
 
-                <Pbold> { width: Fit, text: "Project" }
-                project_dropdown = <DropDown> { width: Fit, popup_menu_position: BelowInput }
+                <Pbold> { width: Fit, text: "Project", margin: 0., padding: <THEME_MSPACE_V_1> {} }
+                project_dropdown = <DropDownFlat> { width: Fit, popup_menu_position: BelowInput }
             }
 
             <View> {
                 flow: Right,
                 width: Fit,
                 height: Fit,
-                align: { x: 0.0, y: 0.8 }
                 spacing: (THEME_SPACE_1)
 
-                <Pbold> { width: Fit, text: "Context" }
-                context_dropdown = <DropDown>{ width: Fit, popup_menu_position: BelowInput }
+                <Pbold> { width: Fit, text: "Context", margin: 0., padding: <THEME_MSPACE_V_1> {} }
+                context_dropdown = <DropDownFlat>{ width: Fit, popup_menu_position: BelowInput }
             }
 
             <View> {
                 flow: Right,
                 width: Fit,
                 height: Fit,
-                align: { x: 0.0, y: 0.8 }
-                spacing: (THEME_SPACE_1)
+                spacing: 0.
 
-                <Pbold> { width: Fit, text: "Model"}
-                model_dropdown = <DropDown> { width: Fit, popup_menu_position: BelowInput }
+                <Pbold> { width: Fit, text: "Model", margin: 0., padding: <THEME_MSPACE_V_1> {} }
+                model_dropdown = <DropDownFlat> { width: Fit, popup_menu_position: BelowInput }
             }
 
             <View> { width: Fill }
 
+            <Vr> { height: 17.5}
+
             <View> {
                 flow: Right,
                 width: Fit,
                 height: Fit,
+                spacing: 0.
 
-                auto_run = <CheckBox> { text: "Autorun", width: Fit }
-            }
-
-        run_button = <ButtonFlatter> {
-                width: Fit,
-                height: Fit,
-                padding: <THEME_MSPACE_1> {}
-                margin: { right: (THEME_SPACE_2) }
-                draw_icon: {
-                    color: (THEME_COLOR_U_4),
-                    svg_file: dep("crate://self/resources/icons/icon_run.svg"),
+                auto_run = <CheckBox> {
+                    text: "Autorun",
+                    width: Fit,
                 }
-                icon_walk: { width: 8. }
             }
 
         }
@@ -99,9 +104,9 @@ live_design!{
             }
 
             send_button = <ButtonFlatter> {
-                width: Fit, height: 30,
-                padding: <THEME_MSPACE_1> {}
-                margin: { left: -45.}
+                width: Fit,
+                padding: <THEME_MSPACE_V_1> {}
+                margin: { left: -35.}
                 draw_icon: {
                     color: (THEME_COLOR_U_4),
                     svg_file: dep("crate://self/resources/icons/icon_run.svg"),
@@ -115,9 +120,13 @@ live_design!{
             // }
                     
             clear_button = <ButtonFlatter> {
-                padding: { right: 5. }
-                icon_walk: {width: 16, height: Fit}
-                text: "×"
+                width: Fit,
+                padding: <THEME_MSPACE_V_1> {}
+                draw_icon: {
+                    color: (THEME_COLOR_U_4),
+                    svg_file: dep("crate://self/resources/icons/icon_times.svg"),
+                }
+                icon_walk: { width: 7. }
             }
         }
         
@@ -125,7 +134,7 @@ live_design!{
     }
     
     Assistant = <RoundedView>{
-        flow:Down
+        flow: Down
         margin: <THEME_MSPACE_H_2> {}
         padding: <THEME_MSPACE_H_2> { bottom: (THEME_SPACE_2) }
 
@@ -198,7 +207,7 @@ live_design!{
                 flow: Right,
                 align: { x: 0.0, y: 0.5},
                 margin: {left: (THEME_SPACE_1), right: (THEME_SPACE_1) },
-                spacing: (THEME_SPACE_1),
+                spacing: (THEME_SPACE_2),
 
                 <P> {
                     width: Fit,
@@ -291,10 +300,9 @@ impl AiChatView{
                 if let Some(wa) = actions.widget_action(id!(copy_button)){
                     if wa.widget().as_button().pressed(actions){
                         let code_view = wa.widget_nth(2).widget(id!(code_view));
-                        log!("COPY! {}", code_view.text());
+                        log!("COPY! {}", code_view.text( ));
                     }
                 }
-                
                 if self.view.button(id!(history_left)).pressed(actions){
                     // first we check if our messages are the same as 'slot'.
                     // if not, we should create an undo item first
@@ -302,7 +310,7 @@ impl AiChatView{
                     cx.action(AppAction::RedrawAiChat{chat_id});
                 }
                 if self.view.button(id!(history_right)).pressed(actions){
-                    self.history_slot = (self.history_slot+ 1).min(doc.file.history.len().saturating_sub(1));
+                    self.history_slot = (self.history_slot + 1).min(doc.file.history.len().saturating_sub(1));
                     cx.action(AppAction::RedrawAiChat{chat_id});
                 }
                 if self.view.button(id!(history_delete)).pressed(actions){
@@ -321,6 +329,14 @@ impl AiChatView{
                     }
                     if message_input.escape(actions){
                         cx.action(AppAction::CancelAiGeneration{chat_id});
+                    }
+                    
+                    if let Some(value) = item.check_box(id!(auto_run)).changed(actions){
+                        doc.file.set_auto_run(self.history_slot, item_id, value);
+                    }
+                    
+                    if item.button(id!(run_button)).pressed(actions){
+                        cx.action(AppAction::RunAiChat{chat_id, history_slot: self.history_slot, item_id});
                     }
                     
                     if let Some(ctx_id) = item.drop_down(id!(context_dropdown)).selected(actions){
@@ -351,6 +367,7 @@ impl AiChatView{
                         // lets fetch the context
                         // println!("{}", dd.selected_item());
                         // alright lets collect the context
+                        println!("SENDING TO BACKEND");
                         cx.action(AppAction::SendAiChatToBackend{chat_id, history_slot: self.history_slot});
                         cx.action(AppAction::SaveAiChat{chat_id});
                         cx.action(AppAction::RedrawAiChat{chat_id});

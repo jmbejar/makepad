@@ -343,7 +343,7 @@ impl Cx {
                     self.mtl_compile_shaders(&metal_cx);
                 }
                 // ok here we send out to all our childprocesses
-                self.demo_time_repaint = false;
+                //self.demo_time_repaint = false;
                 self.handle_repaint(metal_windows, metal_cx);
                 
             }
@@ -583,6 +583,10 @@ impl CxOsApi for Cx {
             self.start_disk_live_file_watcher(100);
         }
         self.live_scan_dependencies();
+
+        #[cfg(apple_bundle)]
+        self.apple_bundle_load_dependencies();
+        #[cfg(not(apple_bundle))]
         self.native_load_dependencies();
     }
     

@@ -26,10 +26,10 @@ impl Widget for DesignerOutline {
     
     fn draw_walk(&mut self, cx: &mut Cx2d, scope:&mut Scope, _walk: Walk) -> DrawStep {
         let file_tree = self.view.designer_outline_tree(id!(outline_tree));
-        let data = scope.props.get::<DesignerData>().unwrap();
+        let data = scope.data.get::<DesignerData>().unwrap();
         
         while let Some(next) = self.view.draw(cx, &mut Scope::empty()).step() {
-            if let Some(mut file_tree) = file_tree.borrow_mut_if_eq(&next) {                                     
+            if let Some(mut file_tree) = file_tree.borrow_mut_if_eq(&next) {
                 if let OutlineNode::Virtual{children,..} = &data.node_map.get(&data.root).as_ref().unwrap(){
                     recur_nodes(cx,  &mut *file_tree, &data.node_map, children);
                 }
