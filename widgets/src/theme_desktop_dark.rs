@@ -1381,11 +1381,12 @@ live_design! {
         draw_text: {
             instance hover: 0.0,
             instance pressed: 0.0,
+            color: (THEME_COLOR_TEXT_DEFAULT)
             text_style: <THEME_FONT_REGULAR> {
                 font_size: (THEME_FONT_SIZE_P)
             }
             fn get_color(self) -> vec4 {
-                return THEME_COLOR_TEXT_DEFAULT
+                return self.color
             }
         }
 
@@ -1654,13 +1655,10 @@ live_design! {
         padding: <THEME_MSPACE_2> {}
         align: { x: 0., y: 0. }
 
-        margin: { right: 0.5}
-
         label_walk: {
             width: Fit, height: Fit,
-            // margin: { left: 20., right: (THEME_SPACE_2) }
-            margin: <THEME_MSPACE_H_1> { left: 20.}
-    }
+            margin: <THEME_MSPACE_H_1> { left: 12.5 }
+        }
 
         draw_check: {
             uniform size: 7.5;
@@ -1670,19 +1668,19 @@ live_design! {
                     CheckType::Check => {
                         let left = 1;
                         let sz = self.size - 1.0;
-                        let offset_x = 5.0;
+                        let offset_x = 0.0;
                         let offset_y = -1.0;
                         let c = vec2(left + sz, self.rect_size.y * 0.5);
 
-                        sdf.box(left + offset_x, c.y - sz, sz * 2.0, sz * 2.0, 1.5 + offset_y);
+                        sdf.box(left, c.y - sz, sz * 2.0, sz * 2.0, 1.5 + offset_y);
                         sdf.fill_keep(mix(THEME_COLOR_INSET_PIT_TOP, THEME_COLOR_INSET_PIT_BOTTOM, pow(self.pos.y, 1.)))
                         sdf.stroke(mix(THEME_COLOR_BEVEL_SHADOW, THEME_COLOR_BEVEL_LIGHT, self.pos.y), THEME_BEVELING)
 
                         let szs = sz * 0.5;
                         let dx = 1.0;
-                        sdf.move_to(left + 4.0 + offset_x, c.y);
-                        sdf.line_to(c.x + offset_x, c.y + szs);
-                        sdf.line_to(c.x + szs + offset_x, c.y - szs);
+                        sdf.move_to(left + 4.0, c.y);
+                        sdf.line_to(c.x, c.y + szs);
+                        sdf.line_to(c.x + szs, c.y - szs);
                         sdf.stroke(mix(
                             mix(THEME_COLOR_U_HIDDEN, THEME_COLOR_CTRL_HOVER, self.hover),
                             THEME_COLOR_TEXT_ACTIVE,
@@ -1691,7 +1689,7 @@ live_design! {
                     }
                     CheckType::Radio => {
                         let sz = self.size;
-                        let left = sz + 1.;
+                        let left = 0.;
                         let c = vec2(left + sz, self.rect_size.y * 0.5);
                         sdf.circle(left, c.y, sz);
                         sdf.fill_keep(mix(THEME_COLOR_INSET_PIT_TOP, THEME_COLOR_INSET_PIT_BOTTOM, pow(self.pos.y, 1.)))
@@ -1712,7 +1710,7 @@ live_design! {
                     }
                     CheckType::Toggle => {
                         let sz = self.size;
-                        let left = sz + 5.;
+                        let left = 0.;
                         let c = vec2(left + sz, self.rect_size.y * 0.5);
                         sdf.box(left, c.y - sz, sz * 3.0, sz * 2.0, 0.5 * sz);
 
@@ -1856,8 +1854,9 @@ live_design! {
     CheckBoxToggle = <CheckBox> {
         align: { x: 0., y: 0. }
         draw_check: { check_type: Toggle }
-        margin: { right: -17.5}
-        label_walk: { margin: <THEME_MSPACE_H_1> { left: 35.} }
+        label_walk: {
+            margin: <THEME_MSPACE_H_1> { left: 22.5 }
+        }
 
         animator: {
             hover = {
@@ -4459,7 +4458,7 @@ live_design! {
     DesignerOutline = <DesignerOutlineBase>{ }
 
     Vr = <View> {
-        width: Fit, height: 27.,
+        width: Fit, height: Fill,
         flow: Right,
         spacing: 0.,
         margin: <THEME_MSPACE_V_2> {}
